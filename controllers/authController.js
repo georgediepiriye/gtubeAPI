@@ -1,5 +1,7 @@
 const bcrypt = require("bcryptjs");
+const { createError } = require("../error");
 const User = require("../models/userModel");
+const jwt = require("jsonwebtoken");
 
 //register
 const register = async (req, res, next) => {
@@ -19,8 +21,24 @@ const register = async (req, res, next) => {
 };
 
 //login
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
-  } catch (error) {}
+    const user = await User.findOne({ name: req.body.name });
+    if (!user) return next(createError(404, "User not found!"));
+    const isCorrect = bcrypt.compareSync(req.body.password, user.password);
+    if (!isCorrect) return next(createError(400, "Wrong credentials!"));
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SEC, {
+      expiresIn: "1h",
+    });
+    const { password, ...others } = user._doc;
+    return res
+      .cookie("access_token", token, {
+        httpOnly: true,
+      })
+      .status(200)
+      .json(others);
+  } catch (error) {
+    next(error);
+  }
 };
 module.exports = { register, login };
