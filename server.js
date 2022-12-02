@@ -5,6 +5,10 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const app = express();
+const userRoutes = require("./routes/userRoutes");
+const videoRoutes = require("./routes/videoRoutes");
+const commentRoutes = require("./routes/commentRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 //middlewares
 app.use(morgan("dev"));
@@ -25,5 +29,22 @@ app.use(
     credentials: true,
   })
 );
+
+//routes
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/videos", videoRoutes);
+app.use("/api/comments", commentRoutes);
+
+//error handler
+app.use((err, req, res, next) => {
+  const status = err.status || 500;
+  const message = err.message || "Something went wrong!";
+  return res.status(status).json({
+    success: false,
+    status: status,
+    message,
+  });
+});
 
 module.exports = app;
